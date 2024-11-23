@@ -12,24 +12,30 @@
 
   <div class="container mt-5">
     <h1 class="d-flex justify-content-center mb-3" style="font-size: 25px;">M42-TECH WEIGHT MACHINE</h1>
-    <div class="row">
-      <div class="col-12">
-        <div class="card mb-3" style="border: none;">
-          <div class="row shadow-lg text-dark bg-info" style="border-radius: 10px;">
-            <div class="col-md-8 d-flex justify-content-center">
-              <img src="scale.png" class="img-fluid rounded-start" alt="Scale">
-              <div class="digital">0g</div>
+    
+    <!-- Podium-like Rack -->
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow-lg" style="border-radius: 10px;">
+          <div class="row g-0">
+            <div class="col-md-6">
+              <div class="card-body d-flex flex-column justify-content-center align-items-center bg-light" style="height: 300px;">
+                <h5 class="card-title text-center">WEIGHT DISPLAY</h5>
+                <img src="weight.png" class="img-fluid rounded-start mb-3" alt="Scale" style="width: 100px;">
+                <div class="digital" style="font-size: 2em;">0g</div>
+              </div>
             </div>
-            <div class="col-md-4">
-              <div class="card-body">
-                <h5 class="card-title d-flex justify-content-center">LAST WEIGHT</h5>
-                <div id="lastw"></div>
+            <div class="col-md-6">
+              <div class="card-body d-flex flex-column justify-content-center align-items-center bg-info" style="height: 300px; color: white;">
+                <h5 class="card-title text-center">LAST WEIGHT</h5>
+                <div id="lastw" class="d-flex flex-column align-items-center"></div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+
   </div>
 
   <script>
@@ -43,7 +49,7 @@
           console.log(response);
           if (response > 1) {
             $('.digital').text(response + 'g');
-            let update = $("<p class='bg-dark card-text d-flex justify-content-center text-white border border-2 border-danger rounded'>"
+            let update = $("<p class='bg-dark card-text d-flex justify-content-center text-white border border-2 border-danger rounded p-2 mb-1'>"
               + response + 'g &nbsp; (' + new Date().toLocaleString() + ")</p>");
             
             // Check if there are already 10 elements, remove the oldest if so
