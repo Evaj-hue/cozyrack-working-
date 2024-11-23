@@ -1,26 +1,32 @@
-<?php 
+<?php
 include "config.php";
 
-// Check connection
+// Create connection
 $conn = mysqli_connect($servername, $username, $password, $dbname);
+
+// Check connection
 if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
-// Fetch the weight for the record with id = 1
-$sql = "SELECT weight FROM weight WHERE id = 1";
+// Fetch the latest weight and last item count from the 'weight' table
+$sql = "SELECT weight, last_item_count FROM weight ORDER BY timestamp DESC LIMIT 1";
 $result = mysqli_query($conn, $sql);
 
-// Check if the query was successful
 if ($result) {
-    // Fetch the weight
     $row = mysqli_fetch_assoc($result);
-    echo $row['weight'];
+    // Send back the weight and item count as JSON
+    echo json_encode([
+        'weight' => $row['weight'],
+        'item_count' => $row['last_item_count']
+    ]);
 } else {
-    // Handle the error if the query fails
-    echo "Error: " . mysqli_error($conn);
+    echo json_encode([
+        'weight' => '0g',
+        'item_count' => '0'
+    ]);
 }
 
-// Close the connection
+// Close connection
 mysqli_close($conn);
 ?>
