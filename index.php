@@ -149,7 +149,8 @@
       const newWeight = parseFloat(parsed.weight);
       const newItem = parseInt(parsed.item_count);
 
-      $('#weight').text(parsed.weight);
+      $('#weight').text(parseFloat(parsed.weight).toFixed(2) + ' kg');
+
       $('#items').text(parsed.item_count);
 
       const timestamp = new Date().toLocaleTimeString();
