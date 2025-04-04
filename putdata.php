@@ -1,69 +1,55 @@
 <?php
 include "config.php";
 
-// Get the weight from the query parameter
-$weight = $_GET['weight'];
-
-// Default status to 'unknown' if not set
+// Get and validate input
+$weight = isset($_GET['weight']) ? floatval($_GET['weight']) : 0.0;
 $status = isset($_GET['status']) ? $_GET['status'] : 'unknown';
 
-// Current date and time
-$date = date("d/m/Y");
-$datename = date("l");
-date_default_timezone_set("Asia/manila");
-$time = date("h:i A");
+// Constants
+$itemWeight = 0.5; // kg per item
+$tolerance = 0.05; // 50 grams
 
-// Create connection
+// Current timestamp
+date_default_timezone_set("Asia/Manila");
+$date = date("Y-m-d");
+$time = date("H:i:s");
+
+// Connect to database
 $conn = mysqli_connect($servername, $username, $password, $dbname);
-
-// Check connection
 if (!$conn) {
-  die("Connection failed: " . mysqli_connect_error());
+    die("Connection failed: " . mysqli_connect_error());
 }
 
-// Get the last recorded weight
-$sql = "SELECT weight FROM weight WHERE id = 1 ORDER BY timestamp DESC LIMIT 1";
-$result = mysqli_query($conn, $sql);
-$lastWeight = mysqli_fetch_assoc($result)['weight'];
+// Get last recorded weight
+$lastWeightSql = "SELECT weight FROM weight ORDER BY created_at DESC LIMIT 1";
+$lastResult = mysqli_query($conn, $lastWeightSql);
+$lastWeight = 0.0;
 
-// Ensure both weights are treated as numeric values
-$weight = (float) $_GET['weight'];  // Cast the input weight to float
-$lastWeight = (float) $lastWeight;  // Cast the database weight to float
+if ($lastResult && mysqli_num_rows($lastResult) > 0) {
+    $lastWeight = floatval(mysqli_fetch_assoc($lastResult)['weight']);
+}
 
-// Calculate the weight difference
-$weightDifference = $lastWeight - $weight;
+$weightDiff = $weight - $lastWeight;
 
-if ($weightDifference != 0) {
-    // Calculate the number of items added or removed (assume 300 grams per item)
-    $itemsChanged = ceil(abs($weightDifference) / 300);
+if (abs($weightDiff) >= $tolerance) {
+    // Calculate item count change
+    $itemCountChange = round(abs($weightDiff) / $itemWeight);
+    $operation = ($weightDiff > 0) ? "added" : "removed";
 
-    // Determine if the weight decreased or increased
-    $operation = ($weightDifference > 0) ? 'removed' : 'added';
+    // INSERT into weight_changes (history)
+    $insertHistory = "INSERT INTO weight_changes (weight, status, time, date, item_count, operation)
+                      VALUES ('$weight', '$status', '$time', '$date', '$itemCountChange', '$operation')";
+    mysqli_query($conn, $insertHistory);
 
-    // Insert the new record for each item changed
-    for ($i = 0; $i < $itemsChanged; $i++) {
-        $insertSql = "INSERT INTO weight_changes (weight, status, time, date, item_count, operation) 
-                      VALUES ('$weight', '$status', '$time', '$date', 1, '$operation')";
+    // INSERT new current weight into weight table (always log latest)
+    $insertWeight = "INSERT INTO weight (weight, status, time, date)
+                     VALUES ('$weight', '$status', '$time', '$date')";
+    mysqli_query($conn, $insertWeight);
 
-        if (mysqli_query($conn, $insertSql)) {
-            echo "Record inserted successfully for item " . ($i + 1) . "\n";
-        } else {
-            echo "Error: " . $insertSql . "<br>" . mysqli_error($conn);
-        }
-    }
-
-    // Update the main weight record
-    $updateSql = "UPDATE weight SET weight = '$weight', status = '$status', time = '$time', date = '$date' WHERE id = 1";
-
-    if (mysqli_query($conn, $updateSql)) {
-        echo "Weight updated successfully";
-    } else {
-        echo "Error: " . $updateSql . "<br>" . mysqli_error($conn);
-    }
+    echo "Change recorded: $itemCountChange item(s) $operation";
 } else {
-    echo "No weight change detected. No update or insert performed.";
+    echo "No significant weight change detected.";
 }
 
-// Close connection
 mysqli_close($conn);
 ?>

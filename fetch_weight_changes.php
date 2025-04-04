@@ -1,36 +1,30 @@
 <?php
 include "config.php";
 
-// Create connection
 $conn = mysqli_connect($servername, $username, $password, $dbname);
-
-// Check connection
 if (!$conn) {
-  die("Connection failed: " . mysqli_connect_error());
+    die("Connection failed: " . mysqli_connect_error());
 }
 
-// Fetch the last 10 records from the weight_changes table
-$sql = "SELECT * FROM weight_changes ORDER BY id DESC LIMIT 10";
+$sql = "SELECT id, weight, time, date, item_count, operation FROM weight_changes ORDER BY id DESC";
 $result = mysqli_query($conn, $sql);
 
-if ($result) {
-  // Display the records in a table
-  $counter = 1;
-  while ($row = mysqli_fetch_assoc($result)) {
-    echo "<tr>";
-    echo "<td>" . $counter . "</td>";
-    echo "<td>" . $row['weight'] . "g</td>";
-    echo "<td>" . $row['time'] . "</td>";
-    echo "<td>" . $row['date'] . "</td>";
-    echo "<td>" . $row['item_count'] . "</td>";
-    echo "<td>" . $row['operation'] . "</td>";
-    echo "</tr>";
-    $counter++;
-  }
+$output = "";
+if (mysqli_num_rows($result) > 0) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $output .= "<tr>
+                      <td>{$row['id']}</td>
+                      <td>{$row['weight']}</td>
+                      <td>{$row['time']}</td>
+                      <td>{$row['date']}</td>
+                      <td>{$row['item_count']}</td>
+                      <td>{$row['operation']}</td>
+                    </tr>";
+    }
 } else {
-  echo "<tr><td colspan='7'>No data found.</td></tr>";
+    $output = "<tr><td colspan='6'>No weight changes found.</td></tr>";
 }
 
-// Close connection
+echo $output;
 mysqli_close($conn);
 ?>
