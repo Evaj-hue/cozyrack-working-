@@ -1,34 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>CozyRack - Load Cell Monitor</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <title>📦 CozyRack - Real-Time Load Cell Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Bootstrap + Chart.js -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
-  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css">
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
   <style>
-    body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
-    .monitor { display: flex; justify-content: center; gap: 40px; margin-top: 40px; flex-wrap: wrap; }
-    .card-box { width: 280px; height: 200px; border-radius: 20px; padding: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); text-align: center; }
+    body {
+      background-color: #f8f9fa;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    .monitor {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 50px;
+      flex-wrap: wrap;
+    }
+    .card-box {
+      width: 300px;
+      height: 250px;
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      text-align: center;
+    }
     .weight-box { background-color: #ffecb3; }
     .item-box { background-color: #c8e6c9; }
-    .label { font-size: 1.3rem; font-weight: bold; margin-bottom: 10px; }
-    .value { font-size: 2.5rem; font-weight: bold; }
-    .table-container { margin: 60px auto; width: 95%; }
-    .table th { background-color: #007bff; color: white; }
-    .graph-row { display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-top: 40px; }
-    .graph-box { width: 45%; min-width: 300px; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 6px 12px rgba(0,0,0,0.1); text-align: center; }
+    .label {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .value {
+      font-size: 2.8rem;
+      font-weight: bold;
+    }
+    .graph-container {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 40px auto;
+      flex-wrap: wrap;
+    }
+    .graph-box {
+      width: 400px;
+    }
+    .table-container {
+      margin: 60px auto;
+      width: 95%;
+    }
+    .table th {
+      background-color: #007bff;
+      color: white;
+    }
+    .btns {
+      text-align: center;
+      margin-bottom: 20px;
+    }
   </style>
 </head>
 <body>
+  <h2 class="text-center mt-4">📦 CozyRack - Real-Time Load Cell Monitor</h2>
 
-  <h2 class="text-center mt-4">📦 CozyRack - Load Cell Monitor</h2>
-
-  <!-- Real-time Display -->
+  <!-- Info Boxes -->
   <div class="monitor">
     <div class="card-box weight-box">
       <div class="label">Real-Time Weight</div>
@@ -41,28 +79,27 @@
   </div>
 
   <!-- Graphs -->
-  <div class="chart-container">
-    <div class="graph-row">
-      <div class="graph-box">
-        <canvas id="weightChart"></canvas>
-        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="downloadChart(weightChart, 'weight-chart')">Download PNG</button>
-      </div>
-      <div class="graph-box">
-        <canvas id="itemChart"></canvas>
-        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="downloadChart(itemChart, 'item-chart')">Download PNG</button>
-      </div>
+  <div class="graph-container">
+    <div class="graph-box">
+      <canvas id="weightChart"></canvas>
     </div>
-
-    <div class="text-center mt-3">
-      <button class="btn btn-success me-2" onclick="exportGraphData()">⬇️ Export Graph Data to CSV</button>
-      <button class="btn btn-danger" onclick="resetGraphs()">🔄 Reset Graph</button>
+    <div class="graph-box">
+      <canvas id="itemChart"></canvas>
     </div>
   </div>
 
-  <!-- Table -->
+  <!-- Buttons -->
+  <div class="btns">
+    <button class="btn btn-primary" onclick="downloadCSV()">Export Graph Data as CSV</button>
+    <button class="btn btn-secondary" onclick="downloadPNG()">Download Graph as PNG</button>
+    <button class="btn btn-danger" onclick="resetGraphs()">Reset Graph</button>
+  </div>
+
+  <!-- Weight changes table -->
   <div class="table-container">
     <h3 class="text-center mb-4">📊 Weight Changes History</h3>
-    <table id="changesTable" class="display table table-bordered text-center">
+    <input type="text" class="form-control mb-3" id="searchInput" placeholder="Search by Date or Item Count..." onkeyup="filterTable()">
+    <table class="table table-bordered text-center">
       <thead>
         <tr>
           <th>#</th>
@@ -74,128 +111,127 @@
         </tr>
       </thead>
       <tbody id="weightChangesTable">
-        <!-- Filled via fetch_weight_changes.php -->
+        <!-- Data from AJAX will go here -->
       </tbody>
     </table>
   </div>
+  <div class="table-container">
+  <h4 class="text-center text-danger">⚠️ Unrecognized Weight Warnings</h4>
+  <table id="warningsTable" class="table table-bordered table-sm">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Weight (kg)</th>
+        <th>Message</th>
+        <th>Time</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="warningTableBody"></tbody>
+  </table>
+</div>
+<script>
+  let lastWeight = 0;
+  let lastItemCount = 0;
+  const weightData = [], itemData = [], labels = [];
 
-  <script>
-    let lastWeight = 0, lastItems = 0;
-    let weightChart, itemChart;
-    const weightData = [], itemData = [], labels = [];
+  const weightChart = new Chart(document.getElementById('weightChart'), {
+    type: 'line', data: { labels, datasets: [{ label: 'Weight (kg)', data: weightData, borderColor: 'orange', fill: false }] }, options: { responsive: true }
+  });
 
-    function initCharts() {
-      const ctx1 = document.getElementById('weightChart').getContext('2d');
-      const ctx2 = document.getElementById('itemChart').getContext('2d');
+  const itemChart = new Chart(document.getElementById('itemChart'), {
+    type: 'line', data: { labels, datasets: [{ label: 'Item Count', data: itemData, borderColor: 'green', fill: false }] }, options: { responsive: true }
+  });
 
-      weightChart = new Chart(ctx1, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Weight (kg)',
-            data: weightData,
-            borderColor: '#f57c00',
-            tension: 0.3,
-            fill: false
-          }]
+  function refreshDisplay() {
+    $.get('getvalue.php', function(res) {
+      const parsed = JSON.parse(res);
+      const newWeight = parseFloat(parsed.weight);
+      const newItem = parseInt(parsed.item_count);
+
+      $('#weight').text(parsed.weight);
+      $('#items').text(parsed.item_count);
+
+      const timestamp = new Date().toLocaleTimeString();
+
+      if (Math.abs(newWeight - lastWeight) > 0.1 || newItem !== lastItemCount) {
+        labels.push(timestamp);
+        weightData.push(newWeight);
+        itemData.push(newItem);
+
+        if (labels.length > 10) {
+          labels.shift();
+          weightData.shift();
+          itemData.shift();
         }
-      });
 
-      itemChart = new Chart(ctx2, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'Item Count',
-            data: itemData,
-            borderColor: '#388e3c',
-            tension: 0.3,
-            fill: false
-          }]
-        }
-      });
-    }
+        weightChart.update();
+        itemChart.update();
 
-    function resetGraphs() {
-      labels.length = 0;
-      weightData.length = 0;
-      itemData.length = 0;
-      weightChart.update();
-      itemChart.update();
-    }
-
-    function downloadChart(chart, filename) {
-      const link = document.createElement('a');
-      link.href = chart.toBase64Image();
-      const today = new Date().toISOString().slice(0, 10);
-      link.download = `rack_chart_data_${today}_${filename}.png`;
-
-      link.click();
-    }
-
-    function exportGraphData() {
-      let csv = 'Time,Weight (kg),Item Count\n';
-      for (let i = 0; i < labels.length; i++) {
-        csv += `${labels[i]},${weightData[i]},${itemData[i]}\n`;
+        lastWeight = newWeight;
+        lastItemCount = newItem;
       }
-
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const today = new Date().toISOString().slice(0, 10);
-      a.download = `rack_data_${today}.csv`;
-
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function refreshDisplay() {
-      $.get('getvalue.php', function (data) {
-        const parsed = JSON.parse(data);
-        const weightValue = parseFloat(parsed.weight);
-        const itemCount = parseInt(parsed.item_count);
-        const now = new Date();
-        const timeStr = now.toLocaleTimeString();
-
-        $('#weight').text(parsed.weight);
-        $('#items').text(itemCount);
-
-        if (Math.abs(weightValue - lastWeight) >= 0.05 || itemCount !== lastItems) {
-          labels.push(timeStr);
-          weightData.push(weightValue);
-          itemData.push(itemCount);
-
-          if (labels.length > 10) {
-            labels.shift();
-            weightData.shift();
-            itemData.shift();
-          }
-
-          weightChart.update();
-          itemChart.update();
-
-          lastWeight = weightValue;
-          lastItems = itemCount;
-        }
-      });
-
-      $('#weightChangesTable').load('fetch_weight_changes.php', function () {
-        if (!$.fn.DataTable.isDataTable('#changesTable')) {
-          $('#changesTable').DataTable({
-            order: [[3, 'desc']], // Default sort by Date descending
-            destroy: true
-          });
-        }
-      });
-    }
-
-    $(document).ready(function () {
-      initCharts();
-      refreshDisplay();
-      setInterval(refreshDisplay, 5000);
     });
-  </script>
+
+    // Update table
+    $.get('fetch_weight_changes.php', function(data) {
+      $('#weightChangesTable').html(data);
+    });
+  }
+
+  function filterTable() {
+    const input = document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.getElementById('weightChangesTable').getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+      const date = rows[i].cells[3]?.textContent.toLowerCase();
+      const count = rows[i].cells[4]?.textContent.toLowerCase();
+      rows[i].style.display = (date?.includes(input) || count?.includes(input)) ? '' : 'none';
+    }
+  }
+  function refreshWarnings() {
+  $.get('fetch_warnings.php', function(data) {
+    $('#warningTableBody').html(data);
+  });
+}
+
+setInterval(refreshDisplay, 5000);
+setInterval(refreshWarnings, 5000);
+refreshDisplay();
+refreshWarnings();
+  function downloadCSV() {
+    let csv = 'Timestamp,Weight,Item Count\n';
+    for (let i = 0; i < labels.length; i++) {
+      csv += `${labels[i]},${weightData[i]},${itemData[i]}\n`;
+    }
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    const today = new Date().toISOString().slice(0, 10);
+    link.download = `rack_data_${today}.csv`;
+    link.click();
+  }
+
+  function downloadPNG() {
+    const today = new Date().toISOString().slice(0, 10);
+    const link1 = document.createElement('a');
+    link1.download = `rack_weight_graph_${today}.png`;
+    link1.href = weightChart.toBase64Image();
+    link1.click();
+
+    const link2 = document.createElement('a');
+    link2.download = `rack_item_graph_${today}.png`;
+    link2.href = itemChart.toBase64Image();
+    link2.click();
+  }
+
+  function resetGraphs() {
+    labels.length = weightData.length = itemData.length = 0;
+    weightChart.update();
+    itemChart.update();
+  }
+
+  setInterval(refreshDisplay, 5000);
+  refreshDisplay();
+</script>
 </body>
 </html>
