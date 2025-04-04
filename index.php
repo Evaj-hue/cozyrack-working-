@@ -105,8 +105,7 @@
   <!-- Weight changes table -->
   <div class="table-container">
     <h3 class="text-center mb-4">📊 Weight Changes History</h3>
-    <input type="text" class="form-control mb-3" id="searchInput" placeholder="Search by Date or Item Count..." onkeyup="filterTable()">
-    <table class="table table-bordered text-center">
+    <table id="weightChangesTable" class="table table-bordered text-center">
       <thead>
         <tr>
           <th>#</th>
@@ -117,7 +116,7 @@
           <th>Operation</th>
         </tr>
       </thead>
-      <tbody id="weightChangesTable">
+      <tbody>
         <!-- Data from AJAX will go here -->
       </tbody>
     </table>
@@ -125,21 +124,47 @@
   <div id="warningBox" class="alert alert-warning text-center" style="display: none;"></div>
 
   <div class="table-container">
-  <h4 class="text-center text-danger">⚠️ Unrecognized Weight Warnings</h4>
-  <table id="warningsTable" class="table table-bordered table-sm">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Weight (kg)</th>
-        <th>Message</th>
-        <th>Time</th>
-        <th>Date</th>
-      </tr>
-    </thead>
-    <tbody id="warningTableBody"></tbody>
-  </table>
-</div>
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="all_warnings.php" class="btn btn-outline-danger">
+          🔍 View All Warnings</a>
+        <h4 class="text-center text-danger">⚠️ Unrecognized Weight Warnings</h4>
+        <div></div> <!-- Spacer to keep title centered -->
+      </div>
+    </div>
+    <table id="warningsTable" class="table table-bordered table-sm">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Weight (kg)</th>
+          <th>Message</th>
+          <th>Time</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="warningTableBody"></tbody>
+    </table>
+  </div>
+
 <script>
+  $(document).ready(function() {
+    // Initialize DataTable for both tables
+    $('#weightChangesTable').DataTable({
+      "searching": true, // Enable search
+      "paging": true,    // Enable paging
+      "pageLength": 5,   // Default number of rows per page
+      "lengthMenu": [5, 10, 20] // Options for rows per page
+    });
+
+    $('#warningsTable').DataTable({
+      "searching": true, // Enable search
+      "paging": true,    // Enable paging
+      "pageLength": 5,   // Default number of rows per page
+      "lengthMenu": [5, 10, 20] // Options for rows per page
+    });
+  });
+
+  // Your existing refreshDisplay, filterTable, and other functions remain the same
   let lastWeight = 0;
   let lastItemCount = 0;
   const weightData = [], itemData = [], labels = [];
@@ -159,7 +184,6 @@
       const newItem = parseInt(parsed.item_count);
 
       $('#weight').text(parseFloat(parsed.weight).toFixed(2) + ' kg');
-
       $('#items').text(parsed.item_count);
 
       const timestamp = new Date().toLocaleTimeString();
@@ -185,29 +209,25 @@
 
     // Update table
     $.get('fetch_weight_changes.php', function(data) {
-      $('#weightChangesTable').html(data);
+      $('#weightChangesTable').DataTable().clear().draw();  // Clear existing data
+      $('#weightChangesTable').DataTable().rows.add($(data)).draw();  // Add new data to the table
     });
   }
 
-  function filterTable() {
-    const input = document.getElementById('searchInput').value.toLowerCase();
-    const rows = document.getElementById('weightChangesTable').getElementsByTagName('tr');
-    for (let i = 0; i < rows.length; i++) {
-      const date = rows[i].cells[3]?.textContent.toLowerCase();
-      const count = rows[i].cells[4]?.textContent.toLowerCase();
-      rows[i].style.display = (date?.includes(input) || count?.includes(input)) ? '' : 'none';
-    }
-  }
   function refreshWarnings() {
-  $.get('fetch_warnings.php', function(data) {
-    $('#warningTableBody').html(data);
-  });
-}
+    $.get('fetch_warnings.php', function(data) {
+      $('#warningTableBody').html(data);
+      $('#warningsTable').DataTable().clear().draw();
+      $('#warningsTable').DataTable().rows.add($(data)).draw();
+    });
+  }
 
-setInterval(refreshDisplay, 5000);
-setInterval(refreshWarnings, 5000);
-refreshDisplay();
-refreshWarnings();
+  setInterval(refreshDisplay, 5000);
+  setInterval(refreshWarnings, 5000);
+  refreshDisplay();
+  refreshWarnings();
+  
+  // Download CSV function
   function downloadCSV() {
     let csv = 'Timestamp,Weight,Item Count\n';
     for (let i = 0; i < labels.length; i++) {
@@ -239,26 +259,7 @@ refreshWarnings();
     weightChart.update();
     itemChart.update();
   }
-
-  setInterval(refreshDisplay, 5000);
-  refreshDisplay();
-
-  $.ajax({
-  url: 'getvalue.php',
-  method: 'GET',
-  success: function (data) {
-    const parsed = JSON.parse(data);
-    $('#weight').text(parsed.weight + ' kg');
-    $('#items').text(parsed.item_count);
-
-    if (parsed.warning && parsed.warning !== '') {
-      $('#warningBox').html(parsed.warning).show();
-    } else {
-      $('#warningBox').hide();
-    }
-  }
-});
-
 </script>
+
 </body>
 </html>
