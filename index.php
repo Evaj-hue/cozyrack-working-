@@ -5,39 +5,45 @@
   <title>📦 CozyRack - Real-Time Load Cell Monitor</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Bootstrap + Chart.js -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
   <style>
     body {
-      background-color: #f8f9fa;
+      background-color: #f4f6f9;
       font-family: 'Segoe UI', sans-serif;
+      margin-left: 200px; /* space for sidebar */
     }
     .monitor {
       display: flex;
+      gap: 30px;
       justify-content: center;
-      gap: 40px;
-      margin-top: 50px;
+      margin-top: 40px;
       flex-wrap: wrap;
     }
     .card-box {
-      width: 300px;
-      height: 250px;
-      border-radius: 20px;
+      border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       text-align: center;
+      height: 220px;
     }
-    .weight-box { background-color: #ffecb3; }
-    .item-box { background-color: #c8e6c9; }
-    .label {
-      font-size: 1.3rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    .value {
-      font-size: 2.8rem;
-      font-weight: bold;
+    .weight-box { background-color: #fff3cd; }
+    .item-box { background-color: #d1e7dd; }
+    .label { font-size: 1.2rem; font-weight: 600; margin-bottom: 10px; }
+    .value { font-size: 2.5rem; font-weight: bold; }
+    .graph-section {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 50px auto;
+      max-width: 1100px;
     }
     .graph-container {
       display: flex;
@@ -50,8 +56,8 @@
       width: 400px;
     }
     .table-container {
-      margin: 60px auto;
-      width: 95%;
+      width: calc(100% - 220px);
+      margin: 30px auto;
     }
     .table th {
       background-color: #007bff;
@@ -61,6 +67,7 @@
       text-align: center;
       margin-bottom: 20px;
     }
+    
   </style>
 </head>
 <body>
@@ -115,6 +122,8 @@
       </tbody>
     </table>
   </div>
+  <div id="warningBox" class="alert alert-warning text-center" style="display: none;"></div>
+
   <div class="table-container">
   <h4 class="text-center text-danger">⚠️ Unrecognized Weight Warnings</h4>
   <table id="warningsTable" class="table table-bordered table-sm">
@@ -233,6 +242,23 @@ refreshWarnings();
 
   setInterval(refreshDisplay, 5000);
   refreshDisplay();
+
+  $.ajax({
+  url: 'getvalue.php',
+  method: 'GET',
+  success: function (data) {
+    const parsed = JSON.parse(data);
+    $('#weight').text(parsed.weight + ' kg');
+    $('#items').text(parsed.item_count);
+
+    if (parsed.warning && parsed.warning !== '') {
+      $('#warningBox').html(parsed.warning).show();
+    } else {
+      $('#warningBox').hide();
+    }
+  }
+});
+
 </script>
 </body>
 </html>
